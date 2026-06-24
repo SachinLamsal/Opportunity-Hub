@@ -32,9 +32,7 @@ export default function AITokenBadge() {
         ))}
       </ul>
       <p className="mt-2 text-slate-500">
-        {usage.activeTier === "exhausted"
-          ? "All credits used — resets on the 1st. Saved opportunity pages still load without credits."
-          : `Next request uses ${active?.label ?? "Basic AI"}. We start with the best model and move down when a tier runs out.`}
+        {`Next request uses ${active?.label ?? "Basic AI"}. We start with the best model and move down when a tier runs out.`}
       </p>
     </div>
   );
