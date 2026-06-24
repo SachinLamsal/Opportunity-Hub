@@ -7,6 +7,13 @@
   --primary-hover: #4338ca;
 }
 
+[data-theme="dark"] {
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -19,8 +26,76 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 html {
   scroll-behavior: smooth;
+}
+
+/* Smooth animations */
+* {
+  @apply transition-all duration-200 ease-out;
+}
+
+/* Remove transitions for specific properties */
+.no-transition {
+  @apply !transition-none;
+}
+
+/* Save animation - turns background green */
+.save-animation {
+  animation: saveFlash 0.3s ease-out;
+}
+
+@keyframes saveFlash {
+  0% {
+    background-color: white;
+  }
+  50% {
+    background-color: #22c55e;
+  }
+  100% {
+    background-color: white;
+  }
+}
+
+[data-theme="dark"] .save-animation {
+  animation: saveFlashDark 0.3s ease-out;
+}
+
+@keyframes saveFlashDark {
+  0% {
+    background-color: #1e293b;
+  }
+  50% {
+    background-color: #22c55e;
+  }
+  100% {
+    background-color: #1e293b;
+  }
+}
+
+/* Smooth hover scale for interactive elements */
+button,
+a {
+  @apply hover:scale-105;
+}
+
+.no-scale {
+  @apply !hover:scale-100;
+}
+
+/* Smooth fade in */
+.fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
