@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { type ButtonHTMLAttributes, type ReactNode } from "react";
 
-type ButtonVariant = "primary" | "secondary" | "outline" | "ghost";
+type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "danger";
 type ButtonSize = "sm" | "md" | "lg";
 
 const variantClasses: Record<ButtonVariant, string> = {
@@ -12,6 +12,8 @@ const variantClasses: Record<ButtonVariant, string> = {
   outline:
     "border border-slate-300 bg-white text-slate-800 hover:bg-slate-50 focus-visible:ring-slate-400",
   ghost: "text-slate-700 hover:bg-slate-100 focus-visible:ring-slate-400",
+  danger:
+    "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
@@ -25,7 +27,7 @@ function cn(...classes: (string | undefined | false)[]) {
 }
 
 const baseClasses =
-  "inline-flex items-center justify-center rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50";
+  "inline-flex items-center justify-center rounded-lg font-medium transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
