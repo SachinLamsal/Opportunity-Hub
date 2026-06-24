@@ -47,7 +47,10 @@ Rules:
 - Do not invent opportunities, achievements, dates, or facts not in the data
 - If the student has weak portfolio coverage, say so and point to a matching opportunity from the list
 - Keep language simple for teenagers
-- Focus on connecting the student to real opportunities in the list, not generic motivation`;
+- Focus on connecting the student to real opportunities in the list, not generic motivation
+- CRITICAL: You MUST pick from the AVAILABLE OPPORTUNITIES list above. Do NOT suggest external websites, sign-in pages, or ANY opportunity not in that list.
+- If fewer than 3 real opportunities from the list match the student's profile, suggest only the matching ones (1-2 is OK).
+- If you cannot find matching opportunities in the list, explain why and suggest 0 opportunities rather than inventing.`;
 }
 
 export function buildCVPrompt(
