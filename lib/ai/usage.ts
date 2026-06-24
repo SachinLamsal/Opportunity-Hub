@@ -16,7 +16,7 @@ export interface AiUsageTierSummary {
 }
 
 export interface AiUsageSummary {
-  activeTier: AiTierId | "exhausted";
+  activeTier: AiTierId | "unlimited";
   activeTierLabel: string;
   resetMonth: string;
   tiers: AiUsageTierSummary[];
@@ -53,12 +53,8 @@ function remainingForTier(row: UsageRow, tierId: AiTierId): number {
 }
 
 export function resolveActiveTier(row: UsageRow): AiTier | null {
-  for (const tier of AI_TIERS) {
-    if (remainingForTier(row, tier.id) > 0) {
-      return tier;
-    }
-  }
-  return null;
+  // Usage limits disabled - always return premium tier
+  return AI_TIERS[0]; // premium tier
 }
 
 async function getOrCreateUsageRow(userId: string): Promise<UsageRow> {
@@ -72,9 +68,14 @@ async function getOrCreateUsageRow(userId: string): Promise<UsageRow> {
     .maybeSingle();
 
   if (selectError) {
-    throw new Error(
-      `Could not load AI usage. Run supabase/migrate-ai-usage.sql — ${selectError.message}`,
-    );
+    // Usage table optional - continue without error
+    return {
+      user_id: userId,
+      premium_used: 0,
+      standard_used: 0,
+      basic_used: 0,
+      reset_month: month,
+    };
   }
 
   if (!existing) {
@@ -85,9 +86,14 @@ async function getOrCreateUsageRow(userId: string): Promise<UsageRow> {
       .single();
 
     if (insertError || !created) {
-      throw new Error(
-        `Could not create AI usage row. Run supabase/migrate-ai-usage.sql — ${insertError?.message}`,
-      );
+      // Usage table optional - continue without error
+      return {
+        user_id: userId,
+        premium_used: 0,
+        standard_used: 0,
+        basic_used: 0,
+        reset_month: month,
+      };
     }
 
     return created as UsageRow;
@@ -110,7 +116,14 @@ async function getOrCreateUsageRow(userId: string): Promise<UsageRow> {
       .single();
 
     if (resetError || !reset) {
-      throw new Error(`Could not reset AI usage — ${resetError?.message}`);
+      // Reset failed - return row with reset month updated
+      return {
+        ...row,
+        reset_month: month,
+        premium_used: 0,
+        standard_used: 0,
+        basic_used: 0,
+      };
     }
 
     return reset as UsageRow;
@@ -127,44 +140,26 @@ export async function getAIUsageSummaryForUser(
   const active = resolveActiveTier(row);
 
   return {
-    activeTier: active?.id ?? "exhausted",
-    activeTierLabel: active?.label ?? "No credits left",
+    activeTier: "unlimited",
+    activeTierLabel: "Unlimited",
     resetMonth: row.reset_month,
     tiers: AI_TIERS.map((tier) => {
-      const used = usedForTier(row, tier.id);
-      const limit = limits[tier.id];
+      const used = 0;
+      const limit = Infinity;
       return {
         id: tier.id,
         label: tier.label,
         used,
         limit,
-        remaining: Math.max(0, limit - used),
+        remaining: Infinity,
       };
     }),
   };
 }
 
 async function consumeTierCredit(userId: string, tierId: AiTierId): Promise<void> {
-  const supabase = await createClient();
-  const row = await getOrCreateUsageRow(userId);
-  const column =
-    tierId === "premium"
-      ? "premium_used"
-      : tierId === "standard"
-        ? "standard_used"
-        : "basic_used";
-
-  const { error } = await supabase
-    .from("ai_user_usage")
-    .update({
-      [column]: usedForTier(row, tierId) + 1,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("user_id", userId);
-
-  if (error) {
-    throw new Error(`Could not record AI usage — ${error.message}`);
-  }
+  // Credit consumption disabled
+  return;
 }
 
 export interface GenerateWithQuotaResult extends GenerateTextResult {
@@ -173,8 +168,7 @@ export interface GenerateWithQuotaResult extends GenerateTextResult {
 }
 
 /**
- * Picks the user's best available tier, calls Gemini once, and deducts one credit
- * only after a successful response.
+ * Calls Gemini with the best available tier and does not track usage.
  */
 export async function generateWithUserQuota(
   userId: string,
@@ -184,19 +178,15 @@ export async function generateWithUserQuota(
   const tier = resolveActiveTier(row);
 
   if (!tier) {
-    const limits = getTierLimits();
-    const total =
-      limits.premium + limits.standard + limits.basic;
     return {
       text: null,
-      error: `You have used all ${total} AI credits for this month. Credits reset on the 1st. Saved opportunity details still load without using credits.`,
+      error: `AI service unavailable. Please try again later.`,
     };
   }
 
   const result = await generateTextWithTier(prompt, tier);
 
   if (result.text) {
-    await consumeTierCredit(userId, tier.id);
     return {
       ...result,
       tierUsed: tier.id,
@@ -208,9 +198,5 @@ export async function generateWithUserQuota(
 }
 
 export function formatUsageHint(summary: AiUsageSummary): string {
-  const active = summary.tiers.find((t) => t.id === summary.activeTier);
-  if (!active || summary.activeTier === "exhausted") {
-    return "No AI credits left this month.";
-  }
-  return `Using ${summary.activeTierLabel} · ${active.remaining} credit${active.remaining === 1 ? "" : "s"} left in this tier`;
+  return `AI enabled · unlimited usage`;
 }
